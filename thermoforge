@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 ThermoForge ❄️ Fire vs. Ice Simulation</title>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #ff9800;
+            text-align: center;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+        }
+
+        .subtitle {
+            color: #aaa;
+            text-align: center;
+            margin-top: 0;
+            font-size: 0.9rem;
+        }
+
+        p {
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .simulation-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            margin: 20px 0;
+            border: 2px solid #444;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        button {
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 12px 24px;
+            background-color: #ff9800;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 140px;
+            max-width: 200px;
+        }
+
+        button:hover, button:focus {
+            background-color: #f57c00;
+            outline: 2px solid #ffb74d;
+            transform: translateY(-2px);
+        }
+
+        button.secondary {
+            background-color: #1e90ff;
+        }
+        
+        button.secondary:hover {
+            background-color: #0d7ae6;
+        }
+
+        .slider-label {
+            text-align: left;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .slider-label label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .wind-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .instructions {
+            font-size: 0.9rem;
+            color: #999;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #ff9800;
+        }
+        
+        .stat-value.ice {
+            color: #1e90ff;
+        }
+
+        .wind-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .wind-arrow {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background-color: #1e90ff;
+            transform-origin: bottom center;
+            transition: transform 0.3s ease;
+        }
+
+        .mode-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .fire-mode {
+            background-color: rgba(255, 152, 0, 0.8);
+            color: #1a1a1a;
+        }
+
+        .ice-mode {
+            background-color: rgba(30, 144, 255, 0.8);
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            main {
+                padding: 10px;
+            }
+            
+            button {
+                min-width: 120px;
+                padding: 10px 15px;
+            }
+            
+            .control-row {
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>🔥 ThermoForge ❄️</h1>
+        <p class="subtitle">An Emergent Simulation of Fire vs. Ice</p>
+        <p>
+            A battle of heat and cold, driven by simple rules of diffusion and decay.
+            Wind carries embers (heat) and frost (cold) to new territories.
+        </p>
+
+        <div class="simulation-container">
+            <div class="canvas-container">
+                <canvas id="gridCanvas"></canvas>
+                <canvas id="smokeCanvas"></canvas>
+            </div>
+            <div class="mode-indicator fire-mode" id="modeIndicator">Fire Tool</div>
+            <div class="wind-indicator">
+                <div class="wind-arrow" id="windArrow"></div>
+                <span id="windSpeedDisplay">0</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <button id="resetButton">Reset</button>
+                <button id="modeButton" class="secondary">Tool: Fire</button>
+            </div>
+
+            <div class="wind-controls">
+                <div class="slider-label">
+                    <label for="windSpeed">Wind Speed: <span id="windSpeedValue">0</span></label>
+                    <input type="range" id="windSpeed" min="0" max="10" value="0">
+                </div>
+                
+                <div class="slider-label">
+                    <label for="windDirection">Wind Direction: <span id="windDirValue">0</span>°</label>
+                    <input type="range" id="windDirection" min="0" max="360" value="0" step="1">
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div>Hot Cells</div>
+                    <div class="stat-value" id="hotCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div>Cold Cells</div>
+                    <div class="stat-value ice" id="coldCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div>Embers</div>
+                    <div class="stat-value" id="emberCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div>Frost</div>
+                    <div class="stat-value ice" id="frostCount">0</div>
+                </div>
+            </div>
+            
+            <p class="instructions">
+                <strong>Click or drag on the map to use your selected tool.</strong>
+            </p>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 1. CONSTANTS & STATE ---
+            const gridCanvas = document.getElementById('gridCanvas');
+            const smokeCanvas = document.getElementById('smokeCanvas');
+            const gridCtx = gridCanvas.getContext('2d');
+            const smokeCtx = smokeCanvas.getContext('2d');
+            
+            // Buttons
+            const resetButton = document.getElementById('resetButton');
+            const modeButton = document.getElementById('modeButton');
+            
+            // Indicators
+            const modeIndicator = document.getElementById('modeIndicator');
+            const windArrow = document.getElementById('windArrow');
+            const windSpeedDisplay = document.getElementById('windSpeedDisplay');
+            
+            // Stats
+            const hotCount = document.getElementById('hotCount');
+            const coldCount = document.getElementById('coldCount');
+            const emberCount = document.getElementById('emberCount');
+            const frostCount = document.getElementById('frostCount');
+
+            // Wind Sliders
+            const windSpeedSlider = document.getElementById('windSpeed');
+            const windSpeedValue = document.getElementById('windSpeedValue');
+            const windDirSlider = document.getElementById('windDirection');
+            const windDirValue = document.getElementById('windDirValue');
+
+            // Simulation parameters
+            const GRID_SIZE = 100;
+            const SIM_SPEED_MS = 30; // Faster update for smoother diffusion
+            const ENTROPY = 0.005;   // Rate of decay towards 0
+            const DIFFUSION = 0.2;   // How much to average with neighbors (0 to 1)
+            
+            const HEAT_THRESHOLD = 1.0; // Temp to be considered "Hot"
+            const COLD_THRESHOLD = -1.0; // Temp to be considered "Cold"
+            
+            const PARTICLE_THRESHOLD = 2.0; // Temp to start spawning particles
+            const PARTICLE_SPAWN_CHANCE = 0.01;
+            
+            const PAINT_HEAT = 5.0;
+            const PAINT_COLD = -5.0;
+
+            let heat;
+            let nextHeat;
+            let simInterval;
+            let currentTool = 'fire';
+            let windSpeed = 0;
+            let windAngle = 0;
+            let particles = [];
+            let isPainting = false;
+            let cellSize = 1;
+
+            // --- 2. CORE SIMULATION LOGIC ---
+
+            /**
+             * Initializes or resets all simulation grids to 0.
+             */
+            function createGrid() {
+                heat = new Array(GRID_SIZE).fill(null).map(() => new Array(GRID_SIZE).fill(0.0));
+                nextHeat = new Array(GRID_SIZE).fill(null).map(() => new Array(GRID_SIZE).fill(0.0));
+            }
+
+            /**
+             * Main simulation tick.
+             */
+            function updateSimulation() {
+                let stats = { hot: 0, cold: 0, embers: 0, frost: 0 };
+
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const currentHeat = heat[y][x];
+                        
+                        // Rule 1: Diffusion (averaging with 8 neighbors)
+                        let neighborSum = 0;
+                        let neighborCount = 0;
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                // if (dx === 0 && dy === 0) continue; // Include self
+                                const ny = y + dy, nx = x + dx;
+                                if (ny >= 0 && ny < GRID_SIZE && nx >= 0 && nx < GRID_SIZE) {
+                                    neighborSum += heat[ny][nx];
+                                    neighborCount++;
+                                }
+                            }
+                        }
+                        const avgHeat = neighborSum / neighborCount;
+                        
+                        // Weighted average between current heat and neighbor average
+                        let diffusedHeat = (currentHeat * (1 - DIFFUSION)) + (avgHeat * DIFFUSION);
+
+                        // Rule 2: Entropy (decay towards 0)
+                        let finalHeat = diffusedHeat;
+                        if (finalHeat > 0) {
+                            finalHeat = Math.max(0, finalHeat - ENTROPY);
+                        } else if (finalHeat < 0) {
+                            finalHeat = Math.min(0, finalHeat + ENTROPY);
+                        }
+                        
+                        nextHeat[y][x] = finalHeat;
+
+                        // Stats & Particle Spawning
+                        if (finalHeat > HEAT_THRESHOLD) {
+                            stats.hot++;
+                            if (finalHeat > PARTICLE_THRESHOLD && Math.random() < PARTICLE_SPAWN_CHANCE * finalHeat) {
+                                createParticle(x, y, 'ember');
+                            }
+                        } else if (finalHeat < COLD_THRESHOLD) {
+                            stats.cold++;
+                            if (finalHeat < -PARTICLE_THRESHOLD && Math.random() < PARTICLE_SPAWN_CHANCE * -finalHeat) {
+                                createParticle(x, y, 'frost');
+                            }
+                        }
+                    }
+                }
+
+                [heat, nextHeat] = [nextHeat, heat];
+
+                updateParticles();
+                updateStats(stats);
+            }
+
+            function getWindVector() {
+                const angleRad = windAngle * (Math.PI / 180);
+                return [Math.sin(angleRad), -Math.cos(angleRad)];
+            }
+
+            // --- 3. PARTICLE SYSTEM ---
+
+            function createParticle(x, y, type) {
+                const [windDX, windDY] = getWindVector();
+                const worldX = (x + 0.5) * cellSize;
+                const worldY = (y + 0.5) * cellSize;
+
+                particles.push({
+                    x: worldX,
+                    y: worldY,
+                    vx: (Math.random() - 0.5) * 0.3 + windDX * windSpeed * 0.1,
+                    vy: (Math.random() - 0.5) * 0.3 + windDY * windSpeed * 0.1 - 0.3, // Rise
+                    life: 60 + Math.random() * 40,
+                    maxLife: 100,
+                    type: type // 'ember' or 'frost'
+                });
+            }
+
+            function updateParticles() {
+                const [windDX, windDY] = getWindVector();
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+
+                    p.vx += windDX * windSpeed * 0.01;
+                    p.vy += windDY * windSpeed * 0.01 - 0.01; // Smoke/embers rise
+
+                    // Particle landing logic
+                    if (p.life < 20 && Math.random() < 0.1) { // Chance to land when life is low
+                        const gridX = Math.floor(p.x / cellSize);
+                        const gridY = Math.floor(p.y / cellSize);
+
+                        if (gridX >= 0 && gridX < GRID_SIZE && gridY >= 0 && gridY < GRID_SIZE) {
+                            const particleHeat = (p.type === 'ember') ? 3.0 : -3.0;
+                            
+                            // Write to both grids to prevent bug
+                            heat[gridY][gridX] += particleHeat;
+                            nextHeat[gridY][gridX] += particleHeat;
+                            
+                            p.life = 0; // Particle is consumed
+                        }
+                    }
+                    
+                    if (p.life <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+
+            // --- 4. RENDERING ---
+
+            function animationLoop() {
+                drawGrid();
+                drawSmoke();
+                requestAnimationFrame(animationLoop);
+            }
+
+            /**
+             * Renders the heat grid to the canvas
+             */
+            function drawGrid() {
+                gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+                
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const h = heat[y][x];
+                        
+                        gridCtx.fillStyle = getHeatColor(h);
+                        gridCtx.fillRect(x * cellSize, y * cellSize, cellSize + 1, cellSize + 1);
+                    }
+                }
+            }
+            
+            /**
+             * Helper function to map heat to an HSL color
+             * @param {number} h - Heat value
+             * @returns {string} CSS color string
+             */
+            function getHeatColor(h) {
+                if (h > 0) {
+                    // Hot: 0 (black/red) to 60 (yellow/white)
+                    const hue = 40 - Math.min(h, 5) * 8; // 40 (orange) -> 0 (red)
+                    const lightness = Math.min(100, 10 + h * 15); // 10% -> 100%
+                    return `hsl(${hue}, 100%, ${lightness}%)`;
+                } else if (h < 0) {
+                    // Cold: 200 (blue) to 240 (dark blue)
+                    const hue = 220 + Math.max(h, -5) * 4; // 220 (light blue) -> 240 (dark blue)
+                    const lightness = Math.min(100, 10 + -h * 15); // 10% -> 100%
+                    return `hsl(${hue}, 100%, ${lightness}%)`;
+                }
+                return '#111'; // Neutral color
+            }
+
+            /**
+             * Renders the particle system (smoke/embers/frost)
+             */
+            function drawSmoke() {
+                smokeCtx.clearRect(0, 0, smokeCanvas.width, smokeCanvas.height);
+                for (const p of particles) {
+                    const alpha = (p.life / p.maxLife) * 0.7;
+                    if (p.type === 'ember') {
+                        smokeCtx.fillStyle = `rgba(255, 150, 0, ${alpha})`;
+                        smokeCtx.fillRect(p.x, p.y, 3, 3);
+                    } else if (p.type === 'frost') {
+                        smokeCtx.fillStyle = `rgba(150, 200, 255, ${alpha})`;
+                        smokeCtx.fillRect(p.x, p.y, 3, 3);
+                    }
+                }
+            }
+
+            function resizeCanvas() {
+                const size = gridCanvas.parentElement.clientWidth;
+                gridCanvas.width = size;
+                gridCanvas.height = size;
+                smokeCanvas.width = size;
+                smokeCanvas.height = size;
+                cellSize = size / GRID_SIZE;
+                drawGrid();
+            }
+
+            // --- 5. INTERACTION & UI ---
+
+            function handlePaint(event) {
+                event.preventDefault();
+                const rect = gridCanvas.getBoundingClientRect();
+
+                const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+                const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+
+                const gridX = Math.floor(x / cellSize);
+                const gridY = Math.floor(y / cellSize);
+
+                paintOnGrid(gridX, gridY);
+            }
+
+            function paintOnGrid(x, y) {
+                const brushSize = 3;
+                
+                for (let dy = -brushSize; dy <= brushSize; dy++) {
+                    for (let dx = -brushSize; dx <= brushSize; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx < 0 || nx >= GRID_SIZE || ny < 0 || ny >= GRID_SIZE) continue;
+                        
+                        if (dx*dx + dy*dy > brushSize*brushSize) continue;
+
+                        if (currentTool === 'fire') {
+                            heat[ny][nx] = PAINT_HEAT;
+                            nextHeat[ny][nx] = PAINT_HEAT;
+                        } else { // Ice tool
+                            heat[ny][nx] = PAINT_COLD;
+                            nextHeat[ny][nx] = PAINT_COLD;
+                        }
+                    }
+                }
+            }
+
+            function updateStats(stats) {
+                hotCount.textContent = stats.hot;
+                coldCount.textContent = stats.cold;
+                
+                let embers = 0;
+                let frosts = 0;
+                particles.forEach(p => {
+                    if (p.type === 'ember') embers++;
+                    else frosts++;
+                });
+                emberCount.textContent = embers;
+                frostCount.textContent = frosts;
+            }
+
+            function updateWindIndicator() {
+                windArrow.style.transform = `rotate(${windAngle}deg)`;
+                windSpeedDisplay.textContent = windSpeed;
+            }
+            
+            // --- 6. INITIALIZATION & EVENT LISTENERS ---
+
+            function init() {
+                console.log("🔥❄️ ThermoForge Initializing...");
+                if (simInterval) clearInterval(simInterval);
+                
+                createGrid();
+                resizeCanvas();
+                particles = [];
+                
+                simInterval = setInterval(updateSimulation, SIM_SPEED_MS);
+            }
+
+            // Event Listeners
+            resetButton.addEventListener('click', init);
+
+            // Tool Toggle Listener
+            modeButton.addEventListener('click', () => {
+                if (currentTool === 'fire') {
+                    currentTool = 'ice';
+                    modeButton.textContent = 'Tool: Ice';
+                    modeButton.classList.remove('secondary');
+                    modeIndicator.textContent = 'Ice Tool';
+                    modeIndicator.className = 'mode-indicator ice-mode';
+                } else {
+                    currentTool = 'fire';
+                    modeButton.textContent = 'Tool: Fire';
+                    modeButton.classList.add('secondary');
+                    modeIndicator.textContent = 'Fire Tool';
+                    modeIndicator.className = 'mode-indicator fire-mode';
+                }
+            });
+
+            // Wind Listeners
+            windSpeedSlider.addEventListener('input', () => {
+                windSpeed = parseFloat(windSpeedSlider.value);
+                windSpeedValue.textContent = windSpeed;
+                updateWindIndicator();
+            });
+
+            windDirSlider.addEventListener('input', () => {
+                windAngle = parseFloat(windDirSlider.value);
+                windDirValue.textContent = `${windAngle}`;
+                updateWindIndicator();
+            });
+
+            // Canvas Interaction
+            gridCanvas.addEventListener('mousedown', (e) => {
+                isPainting = true;
+                handlePaint(e);
+            });
+            gridCanvas.addEventListener('mousemove', (e) => {
+                if (isPainting) handlePaint(e);
+            });
+            window.addEventListener('mouseup', () => {
+                isPainting = false;
+            });
+
+            gridCanvas.addEventListener('touchstart', (e) => {
+                isPainting = true;
+                handlePaint(e);
+Two-column:
+- 1:
+- 2:
+            });
+            gridCanvas.addEventListener('touchmove', (e) => {
+                if (isPainting) handlePaint(e);
+            });
+            window.addEventListener('touchend', () => {
+                isPainting = false;
+            });
+
+            window.addEventListener('resize', resizeCanvas);
+
+            // Start simulation
+            init();
+            animationLoop();
+        });
+    </script>
+</body>
+</html>
